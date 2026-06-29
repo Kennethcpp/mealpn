@@ -62,54 +62,43 @@
     </footer>
 </div>
 
+<!-- ===== Propeller Ads Button + SW ===== -->
+<button id="unlock" style="display:block;margin:20px auto;padding:14px 24px;font-size:16px;font-weight:bold;border:none;border-radius:8px;background:#ff4d00;color:#fff;cursor:pointer;">
+  Click To Continue
+</button>
+
 <script>
-    (function() {
-        // ----- UPDATE DAY/TIME TRACKER -----
-        const dateTimeDisplay = document.getElementById('dateTimeDisplay');
-        function updateDateTime() {
-            const now = new Date();
-            const options = { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: true
-            };
-            dateTimeDisplay.textContent = now.toLocaleDateString('en-NG', options);
-        }
-        updateDateTime();
-        setInterval(updateDateTime, 1000);
+    // ----- UPDATE DAY/TIME TRACKER -----
+    const dateTimeDisplay = document.getElementById('dateTimeDisplay');
+    function updateDateTime() {
+        const now = new Date();
+        const options = { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+        };
+        dateTimeDisplay.textContent = now.toLocaleDateString('en-NG', options);
+    }
+    updateDateTime();
+    setInterval(updateDateTime, 1000);
 
-        // ----- "Today's Plan" link points to mealplan.html with current goal (default gain) -----
-        const todayLink = document.getElementById('todayPlanLink');
-        todayLink.addEventListener('click', function(e) {
-            e.preventDefault();
-            // Get current goal from URL or default to 'gain'
-            const urlParams = new URLSearchParams(window.location.search);
-            let goal = urlParams.get('goal') || 'gain';
-            window.location.href = `mealplan.html?goal=${goal}`;
-        });
+    // ----- Register Propeller Service Worker -----
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js');
+    }
 
-        // ----- Category cards already have href to mealplan.html with goal param -----
-        // No additional logic needed – they navigate to mealplan.html?goal=xxx
-    })();
-</script>
-	<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js');
-}
-</script>
-
-<!-- Propeller Main Tag - fires the popunder -->
-<script>
-  (function(s,u,z,p){
-    s.src=u,
-    s.setAttribute('data-zone',z),
-    p.appendChild(s);
-  })(document.createElement('script'),'https://5gvci.com/act/files/tag.min.js',11217016,document.body||document.documentElement)
+    // ----- Propeller Tag on Button Click -----
+    document.getElementById('unlock').onclick = function(){
+      var s = document.createElement('script');
+      s.src = 'https://5gvci.com/act/files/tag.min.js?z=11217016';
+      document.body.appendChild(s);
+      this.style.display = 'none'; // Hide button after 1 click
+    }
 </script>
 </body>
 </html>
