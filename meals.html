@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Naija Meal Planner · Your Plan</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --green: #00995C;
+            --green-light: #e6f7f0;
+            --green-mid: #00995C22;
+            --black: #020202;
+            --grey: #6b7280;
+            --grey-light: #f5f5f5;
+            --white: #ffffff;
+            --radius: 24px;
+            --radius-sm: 12px;
+            --shadow: 0 8px 28px rgba(0,153,92,0.09);
+            --shadow-hover: 0 18px 40px rgba(0,153,92,0.16);
+        }
+
+        body {
+            background: var(--white);
+            color: var(--black);
+            font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .app-wrapper {
+            max-width: 1300px;
+            width: 100%;
+            padding: 0 1.5rem 2rem;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* ===== NAV ===== */
+        .navbar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0 0.75rem;
+            border-bottom: 3px solid var(--green);
+            margin-bottom: 2rem;
+        }
+        .logo h1 { font-size: 2rem; font-weight: 700; color: var(--green); letter-spacing: -0.5px; }
+        .logo span {
+            font-size: 0.9rem; background: var(--white); padding: 0.2rem 1rem;
+            border-radius: 40px; color: var(--black); border: 1px solid #00995C40;
+            margin-left: 8px; font-weight: 500;
+        }
+        .nav-links { display: flex; gap: 1.8rem; align-items: center; flex-wrap: wrap; }
+        .nav-links a {
+            text-decoration: none; color: var(--black); font-weight: 600; font-size: 0.95rem;
+            transition: 0.15s; border-bottom: 2px solid transparent; padding-bottom: 4px;
+        }
+        .nav-links a:hover { color: var(--green); border-bottom-color: var(--green); }
+        .nav-links a i { margin-right: 6px; color: var(--green); }
+        .day-time-tracker {
+            background: var(--white); padding: 0.3rem 1.2rem; border-radius: 40px;
+            font-weight: 600; font-size: 0.9rem; border: 1px solid #00995C30; white-space: nowrap;
+        }
+        .day-time-tracker i { color: var(--green); margin-right: 6px; }
+
+        /* ===== PLAN HEADER ===== */
+        .plan-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1.6rem;
+        }
+        .plan-header-left h2 {
+            font-size: 1.8rem; font-weight: 700; color: var(--black); letter-spacing: -0.3px;
+        }
+        .plan-header-left h2 span { color: var(--green); }
+        .plan-header-left p { color: var(--grey); margin-top: 0.25rem; font-size: 0.95rem; }
+
+        .goal-switcher {
+            display: flex; gap: 0.5rem; flex-wrap: wrap;
+        }
+        .goal-btn {
+            padding: 0.4rem 1.1rem; border-radius: 30px; border: 2px solid #e5e7eb;
+            background: var(--white); font-size: 0.85rem; font-weight: 600; cursor: pointer;
+            transition: all 0.15s; color: var(--grey);
+        }
+        .goal-btn.active, .goal-btn:hover { border-color: var(--green); color: var(--green); background: var(--green-light); }
+
+        /* ===== TIMELINE STRIP (signature element) ===== */
+        .timeline-strip {
+            background: var(--grey-light);
+            border-radius: var(--radius);
+            padding: 1.2rem 2rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0;
+            overflow-x: auto;
+            position: relative;
+        }
+        .tl-node {
+            display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+            flex: 1; min-width: 72px; position: relative; cursor: default;
+        }
+        .tl-node:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 18px;
+            left: 55%;
+            right: -45%;
+            height: 2px;
+            background: #d1d5db;
+            z-index: 0;
+        }
+        .tl-node.passed:not(:last-child)::after { background: var(--green); }
+
+        .tl-dot {
+            width: 36px; height: 36px; border-radius: 50%;
+            border: 2px solid #d1d5db;
+            background: var(--white);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.9rem; color: var(--grey); z-index: 1; transition: all 0.2s;
+        }
+        .tl-node.passed .tl-dot { background: var(--green); border-color: var(--green); color: var(--white); }
+        .tl-node.active .tl-dot {
+            background: var(--white); border-color: var(--green); color: var(--green);
+            box-shadow: 0 0 0 4px #00995C22; transform: scale(1.18);
+        }
+        .tl-label { font-size: 0.72rem; font-weight: 600; color: var(--grey); text-align: center; white-space: nowrap; }
+        .tl-node.active .tl-label { color: var(--green); }
+        .tl-time { font-size: 0.66rem; color: #aaa; }
+
+        /* ===== TRACKER BADGE ===== */
+        .tracker-row {
+            display: flex; align-items: center; gap: 1rem; margin-bottom: 1.8rem; flex-wrap: wrap;
+        }
+        .tracker-badge {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            background: #FFFFFF; border: 1.5px solid var(--green-mid);
+            border-radius: 30px; padding: 0.4rem 1.1rem;
+            font-size: 0.85rem; font-weight: 600; color: var(--green);
+        }
+        .tracker-badge i { font-size: 0.9rem; }
+        .macro-summary {
+            display: flex; gap: 1rem; flex-wrap: wrap;
+        }
+        .macro-pill {
+            background: #FFFFFF); border-radius: 20px; padding: 0.3rem 0.9rem;
+            font-size: 0.8rem; font-weight: 600; color: var(--black);
+        }
+        .macro-pill span { color: var(--green); }
+
+        /* ===== MEALS GRID ===== */
+        .meals-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.4rem;
+            margin-bottom: 2rem;
+        }
+        @media (max-width: 900px) { .meals-grid { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 600px) { .meals-grid { grid-template-columns: 1fr; } }
+
+        /* ===== MEAL CARD ===== */
+        .meal-card {
+            background: #FFFFFF;
+            border: 2px solid #010101;
+            border-radius: var(--radius);
+            padding: 1.6rem;
+            box-shadow: var(--shadow);
+            transition: all 0.2s;
+            display: flex; flex-direction: column; gap: 1rem;
+            position: relative;
+        }
+        .meal-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-4px); border-color: #010101; }
+        .meal-card.current { border-color: red; }
+        .meal-card.current::before {
+            content: 'NOW';
+            position: absolute; top: -10px; left: 1.4rem;
+            background: red; color: var(--white);
+            font-size: 0.65rem; font-weight: 800; letter-spacing: 1px;
+            padding: 0.15rem 0.7rem; border-radius: 20px;
+        }
+
+        .meal-type-row {
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .meal-type-badge {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            font-size: 0.72rem; font-weight: 700; letter-spacing: 0.5px;
+            text-transform: uppercase; color: var(--green);
+        }
+        .meal-type-badge i { font-size: 0.8rem; }
+        .meal-time { font-size: 0.78rem; color: var(--grey); font-weight: 500; }
+
+        .meal-name { font-size: 1.25rem; font-weight: 700; color: var(--black); line-height: 1.25; }
+        .meal-desc { font-size: 0.85rem; color: var(--grey); line-height: 1.5; }
+
+        /* macros row */
+        .meal-macros {
+            display: flex; gap: 0.5rem; flex-wrap: wrap;
+        }
+        .mac { 
+            font-size: 0.73rem; font-weight: 700; padding: 0.25rem 0.7rem;
+            border-radius: 20px; background: var(--grey-light); color: var(--black);
+        }
+        .mac.cal { background: #fff3e0; color: #e65c00; }
+        .mac.pro { background: #e8f5e9; color: #2e7d32; }
+        .mac.carb { background: #e3f2fd; color: #1565c0; }
+        .mac.fat { background: #fce4ec; color: #c62828; }
+
+        /* ingredients */
+        .ingredients-section { }
+        .section-label {
+            font-size: 0.72rem; font-weight: 700; letter-spacing: 0.5px;
+            text-transform: uppercase; color: var(--grey); margin-bottom: 0.5rem;
+        }
+        .ingredient-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+        .ing-tag {
+            font-size: 0.78rem; padding: 0.22rem 0.75rem; border-radius: 20px;
+            background: #FFFFFF; color: var(--black);
+            border: 1px solid #00995C30; font-weight: 500;
+        }
+        .ing-tag i { color: var(--green); margin-right: 4px; font-size: 0.7rem; }
+
+        /* prep */
+        .meal-meta { display: flex; gap: 1rem; }
+        .meta-item { font-size: 0.78rem; color: var(--grey); display: flex; align-items: center; gap: 0.3rem; }
+        .meta-item i { color: var(--green); font-size: 0.75rem; }
+
+        /* substitutes */
+        .subs-toggle {
+            background: none; border: none; font-size: 0.8rem; font-weight: 600;
+            color: var(--green); cursor: pointer; display: flex; align-items: center; gap: 0.3rem;
+            padding: 0; margin-top: 0.2rem;
+        }
+        .subs-panel {
+            display: none; background: var(--grey-light); border-radius: var(--radius-sm);
+            padding: 0.75rem 1rem; margin-top: 0.5rem;
+        }
+        .subs-panel.open { display: block; }
+        .sub-item {
+            font-size: 0.82rem; color: var(--black); padding: 0.3rem 0;
+            border-bottom: 1px solid #e5e7eb; display: flex; align-items: flex-start; gap: 0.5rem;
+        }
+        .sub-item:last-child { border-bottom: none; }
+        .sub-item i { color: var(--green); margin-top: 2px; flex-shrink: 0; }
+
+        /* ===== SNACK SECTION ===== */
+        .snacks-section { margin-bottom: 2rem; }
+        .snacks-section h3 {
+            font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem; color: var(--black);
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .snacks-section h3 i { color: var(--green); }
+        .snacks-grid { display: flex; flex-wrap: wrap; gap: 1rem; }
+        .snack-card {
+            background: var(--white); border: 2px solid #010101; border-radius: var(--radius-sm);
+            padding: 1rem 1.3rem; flex: 1; min-width: 200px; max-width: 280px;
+            box-shadow: var(--shadow); transition: all 0.2s;
+        }
+        .snack-card:hover { border-color: #010101; transform: translateY(-2px); }
+        .snack-slot { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--grey); margin-bottom: 0.3rem; }
+        .snack-name { font-size: 1rem; font-weight: 700; margin-bottom: 0.25rem; }
+        .snack-note { font-size: 0.8rem; color: var(--grey); line-height: 1.4; }
+        .snack-cal { font-size: 0.75rem; font-weight: 700; color: #e65c00; margin-top: 0.4rem; background: #fff3e0; display: inline-block; padding: 0.15rem 0.6rem; border-radius: 12px; }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            margin-top: auto; padding: 1.2rem 0 0.5rem;
+            border-top: 2px solid #00995C20;
+            display: flex; flex-wrap: wrap; justify-content: space-between;
+            align-items: center; gap: 1rem; font-size: 0.9rem; color: #020202aa;
+        }
+        .footer .left i, .footer .right i { color: var(--green); margin-right: 4px; }
+        .footer .right { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 700px) {
+            .navbar { flex-direction: column; align-items: flex-start; gap: 0.8rem; }
+            .nav-links { width: 100%; justify-content: flex-start; gap: 1.2rem; }
+            .day-time-tracker { font-size: 0.8rem; padding: 0.2rem 1rem; }
+            .timeline-strip { padding: 1rem 1rem; gap: 0; }
+            .tl-label, .tl-time { font-size: 0.62rem; }
+            .plan-header { flex-direction: column; }
+            .footer { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+<div class="app-wrapper">
+
+    <!-- ===== NAV ===== -->
+    <nav class="navbar">
+        <div class="logo">
+            <h1>MealPlanner<span>balanced · tracker</span></h1>
+        </div>
+        <div class="nav-links">
+            <a href="index.html"><i class=""></i> Home</a>
+            <a href="#" class="active"><i class=""></i> Today's Plan</a>
+            <a href="#"><i class=""></i> Progress</a>
+            <div class="day-time-tracker" id="dayTimeTracker">
+                <i class="fas fa-clock"></i> <span id="dateTimeDisplay">Loading...</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ===== PLAN HEADER ===== -->
+    <div class="plan-header">
+        <div class="plan-header-left">
+            <h2><span id="goalLabel"></h2>
+            <p id="planSubtitle"></p>
+        </div>
+       
+    </div>
+
+    <!-- ===== TRACKER ROW ===== -->
+    <div class="tracker-row">
+        <div class="tracker-badge"><i class=""></i> <span id="dayBadge">Day 1 of your plan</span></div>
+        <div class="macro-summary" id="macroSummary"></div>
+    </div>
+
+    <!-- ===== TIMELINE STRIP ===== -->
+    <div class="timeline-strip" id="timelineStrip">
+        <!-- populated by JS -->
+    </div>
+
+    <!-- ===== MEALS GRID ===== -->
+    <div class="meals-grid" id="mealsGrid">
+        <!-- populated by JS -->
+    </div>
+
+    <!-- ===== SNACKS SECTION ===== -->
+    <div class="snacks-section">
+        <h3><i class=""></i> Recommended Snacks for Today</h3>
+        <div class="snacks-grid" id="snacksGrid"></div>
+    </div>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="footer">
+        <div class="left">
+            <i class=""></i> Naija Meal Planner & balanced diet tracker
+        </div>
+        <div class="right">
+            <span><i class=""></i>Relative with Naija market prices</span>
+            <span><i class=""></i> Prep & cook times</span>
+            <span><i class=""></i> 2 substitutes per meal</span>
+            <span><i class=""></i> Macros per serving</span>
+        </div>
+    </footer>
+</div>
+
+<script>
+// ============================================================
+// DATA — 3 goals × rotating days (6 day cycle)
+// ============================================================
+const GOALS = {
+    gain: {
+        label: 'Gain / Bulk',
+        subtitle: 'High calorie, protein-rich Nigerian meals for mass building',
+        totalCal: 3200, protein: 180, carbs: 380, fat: 90,
+        days: [
+            {
+                meals: [
+                    {
+                        type: 'Breakfast', icon: 'fa-sun', time: '7:00 – 9:00 AM',
+                        name: 'Ogi with Akara & Fried Plantain',
+                        desc: 'Thick corn pap enriched with tiger nut milk, paired with crispy bean cakes and sweet ripe plantain for a high-energy morning start.',
+                        cal: 820, protein: 32, carbs: 115, fat: 28,
+                        prepTime: '20 min', cookTime: '15 min',
+                        ingredients: ['Corn pap (ogi)', 'Tiger nut milk', 'Black-eyed beans', 'Ripe plantain', 'Palm oil', 'Onion', 'Scotch bonnet', 'Seasoning cubes'],
+                        subs: ['Replace ogi with golden millet pap for more iron', 'Swap akara for boiled eggs (3 large) to cut prep time']
+                    },
+                    {
+                        type: 'Lunch', icon: 'fa-cloud-sun', time: '12:30 – 2:00 PM',
+                        name: 'Egusi Soup with Pounded Yam',
+                        desc: 'Rich melon seed soup loaded with beef, stockfish and leafy greens, served with smooth pounded yam — the ultimate bulking combo.',
+                        cal: 1100, protein: 68, carbs: 130, fat: 34,
+                        prepTime: '25 min', cookTime: '45 min',
+                        ingredients: ['Pounded yam', 'Egusi (ground melon seeds)', 'Beef (500g)', 'Stockfish', 'Ugwu (fluted pumpkin)', 'Palm oil', 'Crayfish', 'Onion', 'Pepper mix'],
+                        subs: ['Swap pounded yam for eba (garri) if preferred texture', 'Replace beef with goat meat for richer flavour']
+                    },
+                    {
+                        type: 'Dinner', icon: 'fa-moon', time: '7:00 – 9:00 PM',
+                        name: 'Ofada Rice with Ayamase Stew',
+                        desc: 'Aromatic ofada rice paired with the famous green pepper stew loaded with assorted meats — a calorie-dense, flavourful night meal.',
+                        cal: 960, protein: 52, carbs: 110, fat: 30,
+                        prepTime: '15 min', cookTime: '50 min',
+                        ingredients: ['Ofada rice', 'Green bell pepper', 'Scotch bonnet', 'Assorted meat (shaki, kpomo)', 'Palm oil', 'Onion', 'Locust beans (iru)', 'Seasoning'],
+                        subs: ['Use parboiled long-grain rice if ofada is unavailable', 'Swap assorted meat for ponmo + chicken drumsticks']
+                    }
+                ],
+                snacks: [
+                    { slot: 'Mid-Morning (10 AM)', name: 'Groundnut + Banana', note: 'A handful of roasted groundnuts with 1 ripe banana — quick energy, healthy fats and potassium.', cal: 280 },
+                    { slot: 'Afternoon (4 PM)', name: 'Boiled Corn & Ube', note: 'Fresh boiled corn with African pear — filling, fibre-rich and traditionally satisfying.', cal: 240 },
+                    { slot: 'Late Evening (9 PM)', name: 'Tiger Nut Drink (Kunu Aya)', note: 'Chilled tiger nut milk — natural sugars and healthy fats to support overnight muscle recovery.', cal: 190 }
+                ]
+            },
+            {
+                meals: [
+                    {
+                        type: 'Breakfast', icon: 'fa-sun', time: '7:00 – 9:00 AM',
+                        name: 'Beans Porridge with Plantain',
+                        desc: 'Slow-cooked brown beans in palm oil sauce with soft boiled plantain and crayfish — filling, protein-heavy morning fuel.',
+                        cal: 780, protein: 38, carbs: 100, fat: 24,
+                        prepTime: '10 min', cookTime: '35 min',
+                        ingredients: ['Brown beans', 'Ripe plantain', 'Palm oil', 'Crayfish', 'Onion', 'Scotch bonnet', 'Seasoning cubes'],
+                        subs: ['Use honey beans (oloyin) for a sweeter, creamier texture', 'Add boiled eggs on the side for extra protein']
+                    },
+                    {
+                        type: 'Lunch', icon: 'fa-cloud-sun', time: '12:30 – 2:00 PM',
+                        name: 'Banga Soup with Starch',
+                        desc: 'Delta-style palm nut soup with periwinkle, catfish and oburunbebe stick, served with cassava starch — deeply aromatic and calorie-rich.',
+                        cal: 1050, protein: 60, carbs: 120, fat: 36,
+                        prepTime: '20 min', cookTime: '55 min',
+                        ingredients: ['Palm nuts (banga)', 'Starch (cassava)', 'Catfish', 'Periwinkle', 'Oburunbebe spice', 'Dried beletete leaves', 'Crayfish', 'Onion'],
+                        subs: ['Replace starch with pounded yam for a softer swallow', 'Swap catfish for fresh tilapia if available']
+                    },
+                    {
+                        type: 'Dinner', icon: 'fa-moon', time: '7:00 – 9:00 PM',
+                        name: 'Jollof Rice with Grilled Chicken',
+                        desc: 'Party-style smoky jollof rice with tomato base, served with spiced grilled chicken thighs and a side of coleslaw.',
+                        cal: 980, protein: 58, carbs: 118, fat: 28,
+                        prepTime: '20 min', cookTime: '50 min',
+                        ingredients: ['Long-grain parboiled rice', 'Tomato paste', 'Plum tomatoes', 'Chicken thighs', 'Onion', 'Chicken stock', 'Bay leaves', 'Thyme', 'Curry powder'],
+                        subs: ['Use brown rice for lower GI and more fibre', 'Swap chicken for turkey legs for extra lean protein']
+                    }
+                ],
+                snacks: [
+                    { slot: 'Mid-Morning (10 AM)', name: 'Peanut Butter Bread', note: '2 slices of wheat bread with natural groundnut paste — calorie-dense and great before training.', cal: 320 },
+                    { slot: 'Afternoon (4 PM)', name: 'Boiled Sweet Potatoes', note: 'Two medium sweet potatoes — slow-release carbs to keep energy stable through the afternoon.', cal: 210 },
+                    { slot: 'Late Evening (9 PM)', name: 'Warm Milk + Dates', note: 'A cup of warm full-fat milk with 3 medjool dates — promotes muscle repair and restful sleep.', cal: 220 }
+                ]
+            }
+        ]
+    },
+    lose: {
+        label: 'Lose / Burn',
+        subtitle: 'Low calorie, high fibre Nigerian meals for steady fat loss',
+        totalCal: 1700, protein: 120, carbs: 160, fat: 50,
+        days: [
+            {
+                meals: [
+                    {
+                        type: 'Breakfast', icon: 'fa-sun', time: '7:00 – 9:00 AM',
+                        name: 'Oat Akamu with Boiled Eggs',
+                        desc: 'Oat-fortified corn pap with two boiled eggs — high protein, slow-digesting and keeps you full until lunch without spiking blood sugar.',
+                        cal: 380, protein: 24, carbs: 48, fat: 10,
+                        prepTime: '10 min', cookTime: '10 min',
+                        ingredients: ['Rolled oats', 'Corn pap (ogi)', 'Eggs (2)', 'Cinnamon', 'Ginger powder', 'Honey (1 tsp)', 'Skimmed milk'],
+                        subs: ['Swap oat akamu for millet pap — similar fibre, nuttier taste', 'Replace eggs with grilled tofu for a lighter option']
+                    },
+                    {
+                        type: 'Lunch', icon: 'fa-cloud-sun', time: '12:30 – 2:00 PM',
+                        name: 'Vegetable Okra Soup + Small Eba',
+                        desc: 'Light okra soup packed with ugwu, prawns and snail — served with a small portion of eba. Low calorie but filling and micronutrient-dense.',
+                        cal: 520, protein: 42, carbs: 58, fat: 14,
+                        prepTime: '15 min', cookTime: '25 min',
+                        ingredients: ['Okra', 'Garri (small portion 60g)', 'Ugwu leaves', 'Prawns', 'Snail', 'Palm oil (1 tbsp)', 'Crayfish', 'Tomato', 'Onion'],
+                        subs: ['Replace eba with amala for a lower glycaemic load', 'Swap snail for smoked mackerel (titus) for more omega-3']
+                    },
+                    {
+                        type: 'Dinner', icon: 'fa-moon', time: '6:30 – 8:00 PM',
+                        name: 'Grilled Tilapia & Ugwu Salad',
+                        desc: 'Whole grilled tilapia with fresh ugwu, tomato, cucumber and a light lemon-pepper dressing — high protein, very low carb, perfect evening cut meal.',
+                        cal: 420, protein: 46, carbs: 18, fat: 14,
+                        prepTime: '10 min', cookTime: '20 min',
+                        ingredients: ['Tilapia (whole)', 'Ugwu leaves', 'Cucumber', 'Tomato', 'Lemon', 'Pepper', 'Garlic', 'Olive oil (1 tsp)', 'Seasoning'],
+                        subs: ['Swap tilapia for catfish — similar calories, bolder flavour', 'Replace ugwu with waterleaf or shredded cabbage']
+                    }
+                ],
+                snacks: [
+                    { slot: 'Mid-Morning (10 AM)', name: 'Garden Eggs + Groundnut Paste', note: 'Raw garden eggs with 1 tbsp groundnut paste — crunchy, satisfying and only ~120 kcal.', cal: 120 },
+                    { slot: 'Afternoon (4 PM)', name: 'Zobo (unsweetened)', note: 'Cold hibiscus drink with ginger and cloves — zero sugar, rich in antioxidants and a great appetite suppressant.', cal: 15 },
+                    { slot: 'Pre-Bed (8:30 PM)', name: 'Cucumber & Tomato Slices', note: 'Light, hydrating, virtually zero calories. Keeps late-night cravings at bay.', cal: 30 }
+                ]
+            },
+            {
+                meals: [
+                    {
+                        type: 'Breakfast', icon: 'fa-sun', time: '7:00 – 9:00 AM',
+                        name: 'Vegetable Omelette (Naija Style)',
+                        desc: 'Three-egg omelette with diced tomato, onion, green pepper and a pinch of suya spice — no bread, pure protein fuel to start the day.',
+                        cal: 350, protein: 26, carbs: 10, fat: 22,
+                        prepTime: '5 min', cookTime: '10 min',
+                        ingredients: ['Eggs (3)', 'Tomato', 'Onion', 'Green pepper', 'Suya spice', 'Olive oil (1 tsp)', 'Spinach handful', 'Seasoning cube'],
+                        subs: ['Add mushrooms for extra fibre and vitamin D', 'Use egg whites only (4–5) to reduce fat further']
+                    },
+                    {
+                        type: 'Lunch', icon: 'fa-cloud-sun', time: '12:30 – 2:00 PM',
+                        name: 'Pepper Soup (Goat Meat)',
+                        desc: 'Clear, spiced broth with tender goat meat pieces — extremely low calorie, very high protein, and deeply warming. Great for fat loss.',
+                        cal: 480, protein: 52, carbs: 12, fat: 22,
+                        prepTime: '15 min', cookTime: '45 min',
+                        ingredients: ['Goat meat (400g)', 'Pepper soup spice mix', 'Utazi leaves', 'Ehuru (calabash nutmeg)', 'Uziza leaves', 'Stock', 'Onion', 'Salt'],
+                        subs: ['Swap goat meat for chicken breast — leaner option', 'Use catfish instead for a seafood pepper soup']
+                    },
+                    {
+                        type: 'Dinner', icon: 'fa-moon', time: '6:30 – 8:00 PM',
+                        name: 'Moi Moi + Steamed Vegetables',
+                        desc: 'Steamed bean pudding made lean with no oil, loaded with fish and egg — served with a side of steamed broccoli and carrots.',
+                        cal: 420, protein: 38, carbs: 42, fat: 10,
+                        prepTime: '20 min', cookTime: '40 min',
+                        ingredients: ['Black-eyed beans', 'Titus fish (mackerel)', 'Eggs (2)', 'Tomato', 'Onion', 'Pepper', 'Broccoli', 'Carrots', 'Seasoning'],
+                        subs: ['Add shrimp to moi moi instead of fish for variety', 'Replace broccoli with steamed ugu for local availability']
+                    }
+                ],
+                snacks: [
+                    { slot: 'Mid-Morning (10 AM)', name: 'Watermelon Slices', note: '2 cups of chilled watermelon — 90% water, naturally sweet, only 80 kcal. Hydrating and refreshing.', cal: 80 },
+                    { slot: 'Afternoon (4 PM)', name: 'Roasted Groundnuts (small handful)', note: '20g of roasted groundnuts — healthy fats, protein, keeps you from overeating at dinner.', cal: 115 },
+                    { slot: 'Pre-Bed (8:30 PM)', name: 'Warm Ginger & Lemon Tea', note: 'Metabolism-boosting, caffeine-free — aids digestion and promotes better fat oxidation overnight.', cal: 5 }
+                ]
+            }
+        ]
+    },
+    regular: {
+        label: 'Regular',
+        subtitle: 'Balanced, traditional meals for everyday health and wellbeing',
+        totalCal: 2300, protein: 100, carbs: 280, fat: 70,
+        days: [
+            {
+                meals: [
+                    {
+                        type: 'Breakfast', icon: 'fa-sun', time: '7:00 – 9:00 AM',
+                        name: 'Akamu & Moi Moi',
+                        desc: 'Classic Nigerian breakfast — smooth warm pap with a portion of steamed bean pudding. Balanced carbs and protein to fuel the morning.',
+                        cal: 560, protein: 28, carbs: 80, fat: 14,
+                        prepTime: '15 min', cookTime: '40 min',
+                        ingredients: ['Corn pap (ogi)', 'Black-eyed beans', 'Titus fish', 'Eggs', 'Tomato', 'Onion', 'Pepper', 'Seasoning cubes'],
+                        subs: ['Replace ogi with soy milk pap for added protein', 'Swap moi moi fish for sardines (canned) as a quick alternative']
+                    },
+                    {
+                        type: 'Lunch', icon: 'fa-cloud-sun', time: '12:30 – 2:00 PM',
+                        name: 'Efo Riro with White Rice',
+                        desc: 'Vibrant Lagos-style spinach stew with assorted meat and stockfish, served with well-cooked parboiled white rice — hearty and complete.',
+                        cal: 780, protein: 44, carbs: 98, fat: 24,
+                        prepTime: '20 min', cookTime: '40 min',
+                        ingredients: ['Parboiled rice', 'Spinach (tete / soko)', 'Assorted meat', 'Stockfish', 'Palm oil', 'Tomato', 'Onion', 'Crayfish', 'Pepper'],
+                        subs: ['Swap white rice for ofada rice — more flavour and nutrients', 'Replace spinach with ugwu for a heartier base']
+                    },
+                    {
+                        type: 'Dinner', icon: 'fa-moon', time: '7:00 – 9:00 PM',
+                        name: 'Yam & Egg Sauce',
+                        desc: 'Boiled yam with a rich tomato-egg sauce made with scotch bonnet, onion and a drizzle of palm oil — simple, comforting and well-balanced.',
+                        cal: 680, protein: 22, carbs: 96, fat: 24,
+                        prepTime: '10 min', cookTime: '30 min',
+                        ingredients: ['White yam', 'Eggs (3)', 'Tomato', 'Onion', 'Scotch bonnet', 'Palm oil', 'Seasoning cubes', 'Spring onion'],
+                        subs: ['Swap white yam for sweet potato to lower glycaemic index', 'Add corned beef to the egg sauce for extra protein']
+                    }
+                ],
+                snacks: [
+                    { slot: 'Mid-Morning (10 AM)', name: 'Boli (Roasted Plantain)', note: 'One medium roasted plantain — fibre-rich, naturally sweet and very Nigerian. Great street-food snack.', cal: 180 },
+                    { slot: 'Afternoon (4 PM)', name: 'Chin Chin (small pack)', note: 'A small 40g portion of home-fried chin chin — satisfying crunch with moderate calories.', cal: 200 },
+                    { slot: 'Evening (8 PM)', name: 'Zobo + Garden Eggs', note: 'Chilled zobo drink with sliced garden eggs — refreshing, light and packed with antioxidants.', cal: 90 }
+                ]
+            },
+            {
+                meals: [
+                    {
+                        type: 'Breakfast', icon: 'fa-sun', time: '7:00 – 9:00 AM',
+                        name: 'Bread & Egg Sauce with Tea',
+                        desc: 'Nigerian-style scrambled eggs with tomato sauce served with sliced agege bread and a cup of ginger tea. A light, familiar morning meal.',
+                        cal: 520, protein: 22, carbs: 72, fat: 16,
+                        prepTime: '5 min', cookTime: '12 min',
+                        ingredients: ['Agege bread (2 slices)', 'Eggs (2)', 'Tomato', 'Onion', 'Green pepper', 'Vegetable oil', 'Ginger (fresh)', 'Seasoning'],
+                        subs: ['Use whole wheat bread instead of agege for more fibre', 'Swap eggs for baked beans in tomato sauce for a lighter option']
+                    },
+                    {
+                        type: 'Lunch', icon: 'fa-cloud-sun', time: '12:30 – 2:00 PM',
+                        name: 'Afang Soup with Eba',
+                        desc: 'Cross River afang leaves blended with waterleaf, periwinkle and beef in palm oil — served with golden eba. Rich in iron and folate.',
+                        cal: 820, protein: 46, carbs: 95, fat: 28,
+                        prepTime: '25 min', cookTime: '40 min',
+                        ingredients: ['Afang leaves (dried & ground)', 'Waterleaf', 'Garri (90g)', 'Beef', 'Periwinkle', 'Palm oil', 'Crayfish', 'Stockfish', 'Pepper'],
+                        subs: ['Swap eba for semovita for a smoother swallow', 'Replace periwinkle with shrimp for a less chewy texture']
+                    },
+                    {
+                        type: 'Dinner', icon: 'fa-moon', time: '7:00 – 9:00 PM',
+                        name: 'Tuwo Shinkafa with Miyan Kuka',
+                        desc: 'Northern Nigerian rice flour tuwo with baobab leaf soup (miyan kuka), beef and dried fish — earthy, comforting and full of micronutrients.',
+                        cal: 700, protein: 38, carbs: 98, fat: 20,
+                        prepTime: '15 min', cookTime: '35 min',
+                        ingredients: ['Rice flour (tuwo)', 'Baobab powder (kuka)', 'Beef', 'Dried fish', 'Dawadawa (locust beans)', 'Tomato', 'Onion', 'Groundnut oil'],
+                        subs: ['Swap tuwo for fufu if unavailable in your area', 'Replace miyan kuka with miyan taushe (pumpkin soup) for a sweeter profile']
+                    }
+                ],
+                snacks: [
+                    { slot: 'Mid-Morning (10 AM)', name: 'Kunu Drink + Dates', note: 'Chilled millet-based kunu with 2 dates — probiotic-rich, naturally sweet and energising.', cal: 160 },
+                    { slot: 'Afternoon (4 PM)', name: 'Coconut Chunks', note: 'Fresh coconut pieces — healthy MCT fats, satisfying and a classic Nigerian afternoon snack.', cal: 185 },
+                    { slot: 'Evening (8 PM)', name: 'Tiger Nuts (Aki Awusa)', note: 'A small portion of tiger nuts — resistant starch, gut-friendly fibre and naturally filling.', cal: 145 }
+                ]
+            }
+        ]
+    }
+};
+
+// Timeline config
+const TIMELINE_NODES = [
+    { key: 'breakfast', label: 'Breakfast', icon: 'fa-sun', startH: 7, endH: 9 },
+    { key: 'snack1',    label: 'Snack 1',   icon: 'fa-apple-alt', startH: 10, endH: 11 },
+    { key: 'lunch',     label: 'Lunch',     icon: 'fa-cloud-sun', startH: 12, endH: 14 },
+    { key: 'snack2',    label: 'Snack 2',   icon: 'fa-cookie-bite', startH: 16, endH: 17 },
+    { key: 'dinner',    label: 'Dinner',    icon: 'fa-moon', startH: 18, endH: 21 }
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let currentGoal = 'gain';
+let planDay = 1;  // 1-indexed, stored in localStorage
+
+function loadState() {
+    const urlParams = new URLSearchParams(window.location.search);
+    currentGoal = urlParams.get('goal') || localStorage.getItem('mp_goal') || 'gain';
+
+    // Day tracking: persist plan start date
+    const startKey = 'mp_start_' + currentGoal;
+    let startDate = localStorage.getItem(startKey);
+    if (!startDate) {
+        startDate = new Date().toDateString();
+        localStorage.setItem(startKey, startDate);
+    }
+    const start = new Date(startDate);
+    const now = new Date();
+    const diff = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+    const goalData = GOALS[currentGoal];
+    const totalDays = goalData.days.length;
+    planDay = (diff % totalDays) + 1;
+}
+
+function saveGoal(goal) {
+    localStorage.setItem('mp_goal', goal);
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function getCurrentMealIndex() {
+    const h = new Date().getHours() + new Date().getMinutes() / 60;
+    if (h < 10) return 0;
+    if (h < 14) return 1;
+    return 2;
+}
+
+function renderTimeline() {
+    const h = new Date().getHours() + new Date().getMinutes() / 60;
+    const strip = document.getElementById('timelineStrip');
+    strip.innerHTML = TIMELINE_NODES.map((node, i) => {
+        let state = '';
+        if (h >= node.endH) state = 'passed';
+        else if (h >= node.startH) state = 'active';
+        return `<div class="tl-node ${state}">
+            <div class="tl-dot"><i class="fas ${node.icon}"></i></div>
+            <div class="tl-label">${node.label}</div>
+            <div class="tl-time">${node.startH > 12 ? node.startH-12 : node.startH}${node.startH >= 12 ? 'pm':'am'}</div>
+        </div>`;
+    }).join('');
+}
+
+function renderPlan() {
+    const data = GOALS[currentGoal];
+    const dayIdx = (planDay - 1) % data.days.length;
+    const dayData = data.days[dayIdx];
+    const currentMealIdx = getCurrentMealIndex();
+
+    // Header
+    document.getElementById('goalLabel').textContent = data.label;
+    document.getElementById('planSubtitle').textContent = data.subtitle;
+    document.getElementById('dayBadge').textContent = `Day ${planDay} of your plan`;
+
+    // Macro summary
+    document.getElementById('macroSummary').innerHTML = `
+        <div class="macro-pill">🔥 <span>${data.totalCal}</span> kcal/day</div>
+        <div class="macro-pill">💪 Protein <span>${data.protein}g</span></div>
+        <div class="macro-pill">🍚 Carbs <span>${data.carbs}g</span></div>
+        <div class="macro-pill">🥑 Fat <span>${data.fat}g</span></div>
+    `;
+
+    // Goal buttons
+    document.querySelectorAll('.goal-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.goal === currentGoal);
+    });
+
+    // Meals
+    document.getElementById('mealsGrid').innerHTML = dayData.meals.map((meal, i) => {
+        const isCurrent = i === currentMealIdx;
+        return `<div class="meal-card ${isCurrent ? 'current' : ''}">
+            <div class="meal-type-row">
+                <div class="meal-type-badge"><i class="fas ${meal.icon}"></i> ${meal.type}</div>
+                <div class="meal-time"><i class="fas fa-clock" style="color:var(--green);margin-right:4px;"></i>${meal.time}</div>
+            </div>
+            <div class="meal-name">${meal.name}</div>
+            <div class="meal-desc">${meal.desc}</div>
+            <div class="meal-macros">
+                <span class="mac cal">🔥 ${meal.cal} kcal</span>
+                <span class="mac pro">💪 ${meal.protein}g protein</span>
+                <span class="mac carb">🍚 ${meal.carbs}g carbs</span>
+                <span class="mac fat">🥑 ${meal.fat}g fat</span>
+            </div>
+            <div class="ingredients-section">
+                <div class="section-label"><i class="fas fa-list-ul" style="color:var(--green);margin-right:4px;"></i>Key Ingredients</div>
+                <div class="ingredient-tags">${meal.ingredients.map(ing => `<span class="ing-tag"><i class="fas fa-check-circle"></i>${ing}</span>`).join('')}</div>
+            </div>
+            <div class="meal-meta">
+                <div class="meta-item"><i class="fas fa-knife"></i> Prep: ${meal.prepTime}</div>
+                <div class="meta-item"><i class="fas fa-fire-burner"></i> Cook: ${meal.cookTime}</div>
+            </div>
+            <div>
+                <button class="subs-toggle" onclick="toggleSubs(this)"><i class="fas fa-exchange-alt"></i> Show substitutes</button>
+                <div class="subs-panel">
+                    ${meal.subs.map(s => `<div class="sub-item"><i class="fas fa-arrow-right-arrow-left"></i><span>${s}</span></div>`).join('')}
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+
+    // Snacks
+    document.getElementById('snacksGrid').innerHTML = dayData.snacks.map(snack => `
+        <div class="snack-card">
+            <div class="snack-slot"><i class="fas fa-clock" style="color:var(--green);margin-right:4px;"></i>${snack.slot}</div>
+            <div class="snack-name">${snack.name}</div>
+            <div class="snack-note">${snack.note}</div>
+            <div class="snack-cal">~${snack.cal} kcal</div>
+        </div>
+    `).join('');
+}
+
+function switchGoal(goal) {
+    currentGoal = goal;
+    saveGoal(goal);
+    loadState();
+    renderPlan();
+    renderTimeline();
+    // Update URL without reload
+    const url = new URL(window.location);
+    url.searchParams.set('goal', goal);
+    window.history.replaceState({}, '', url);
+}
+
+function toggleSubs(btn) {
+    const panel = btn.nextElementSibling;
+    const open = panel.classList.toggle('open');
+    btn.innerHTML = open
+        ? '<i class="fas fa-times"></i> Hide substitutes'
+        : '<i class="fas fa-exchange-alt"></i> Show substitutes';
+}
+
+// ============================================================
+// DATE/TIME
+// ============================================================
+function updateDateTime() {
+    const now = new Date();
+    document.getElementById('dateTimeDisplay').textContent = now.toLocaleDateString('en-NG', {
+        weekday: 'short', month: 'short', day: 'numeric',
+        hour: '2-digit', minute: '2-digit', hour12: true
+    });
+}
+
+// ============================================================
+// INIT
+// ============================================================
+loadState();
+renderPlan();
+renderTimeline();
+updateDateTime();
+setInterval(updateDateTime, 1000);
+setInterval(renderTimeline, 60000); // refresh timeline every minute
+</script>
+</body>
+</html>
