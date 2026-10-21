@@ -85,9 +85,7 @@
         .plan-header-left h2 span { color: var(--green); }
         .plan-header-left p { color: var(--grey); margin-top: 0.25rem; font-size: 0.95rem; }
 
-        .goal-switcher {
-            display: flex; gap: 0.5rem; flex-wrap: wrap;
-        }
+        .goal-switcher { display: flex; gap: 0.5rem; flex-wrap: wrap; }
         .goal-btn {
             padding: 0.4rem 1.1rem; border-radius: 30px; border: 2px solid #e5e7eb;
             background: var(--white); font-size: 0.85rem; font-weight: 600; cursor: pointer;
@@ -95,7 +93,7 @@
         }
         .goal-btn.active, .goal-btn:hover { border-color: var(--green); color: var(--green); background: var(--green-light); }
 
-        /* ===== TIMELINE STRIP (signature element) ===== */
+        /* ===== TIMELINE STRIP ===== */
         .timeline-strip {
             background: var(--grey-light);
             border-radius: var(--radius);
@@ -151,11 +149,9 @@
             font-size: 0.85rem; font-weight: 600; color: var(--green);
         }
         .tracker-badge i { font-size: 0.9rem; }
-        .macro-summary {
-            display: flex; gap: 1rem; flex-wrap: wrap;
-        }
+        .macro-summary { display: flex; gap: 1rem; flex-wrap: wrap; }
         .macro-pill {
-            background: #FFFFFF); border-radius: 20px; padding: 0.3rem 0.9rem;
+            background: #FFFFFF; border-radius: 20px; padding: 0.3rem 0.9rem;
             font-size: 0.8rem; font-weight: 600; color: var(--black);
         }
         .macro-pill span { color: var(--green); }
@@ -191,9 +187,7 @@
             padding: 0.15rem 0.7rem; border-radius: 20px;
         }
 
-        .meal-type-row {
-            display: flex; align-items: center; justify-content: space-between;
-        }
+        .meal-type-row { display: flex; align-items: center; justify-content: space-between; }
         .meal-type-badge {
             display: inline-flex; align-items: center; gap: 0.4rem;
             font-size: 0.72rem; font-weight: 700; letter-spacing: 0.5px;
@@ -205,11 +199,8 @@
         .meal-name { font-size: 1.25rem; font-weight: 700; color: var(--black); line-height: 1.25; }
         .meal-desc { font-size: 0.85rem; color: var(--grey); line-height: 1.5; }
 
-        /* macros row */
-        .meal-macros {
-            display: flex; gap: 0.5rem; flex-wrap: wrap;
-        }
-        .mac { 
+        .meal-macros { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .mac {
             font-size: 0.73rem; font-weight: 700; padding: 0.25rem 0.7rem;
             border-radius: 20px; background: var(--grey-light); color: var(--black);
         }
@@ -218,8 +209,6 @@
         .mac.carb { background: #e3f2fd; color: #1565c0; }
         .mac.fat { background: #fce4ec; color: #c62828; }
 
-        /* ingredients */
-        .ingredients-section { }
         .section-label {
             font-size: 0.72rem; font-weight: 700; letter-spacing: 0.5px;
             text-transform: uppercase; color: var(--grey); margin-bottom: 0.5rem;
@@ -232,12 +221,10 @@
         }
         .ing-tag i { color: var(--green); margin-right: 4px; font-size: 0.7rem; }
 
-        /* prep */
         .meal-meta { display: flex; gap: 1rem; }
         .meta-item { font-size: 0.78rem; color: var(--grey); display: flex; align-items: center; gap: 0.3rem; }
         .meta-item i { color: var(--green); font-size: 0.75rem; }
 
-        /* substitutes */
         .subs-toggle {
             background: none; border: none; font-size: 0.8rem; font-weight: 600;
             color: var(--green); cursor: pointer; display: flex; align-items: center; gap: 0.3rem;
@@ -284,6 +271,51 @@
         .footer .left i, .footer .right i { color: var(--green); margin-right: 4px; }
         .footer .right { display: flex; gap: 1.5rem; flex-wrap: wrap; }
 
+        /* ===== DAILY SUPPORT GATE ===== */
+        #planContent { transition: filter 0.3s; }
+        #planContent.locked {
+            filter: blur(7px);
+            pointer-events: none;
+            user-select: none;
+            max-height: 70vh;
+            overflow: hidden;
+        }
+        .gate-overlay {
+            position: fixed; inset: 0; z-index: 1000;
+            display: none; align-items: center; justify-content: center;
+            padding: 1.2rem;
+            background: rgba(255,255,255,0.55);
+            backdrop-filter: blur(2px);
+        }
+        .gate-overlay.show { display: flex; }
+        .gate-card {
+            background: var(--white);
+            border: 2px solid var(--black);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-hover);
+            padding: 2rem 1.8rem;
+            max-width: 420px; width: 100%;
+            text-align: center;
+        }
+        .gate-icon {
+            width: 56px; height: 56px; border-radius: 50%;
+            background: var(--green-light); color: var(--green);
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; margin-bottom: 1rem;
+        }
+        .gate-card h2 { font-size: 1.4rem; margin-bottom: 0.6rem; }
+        .gate-card p { font-size: 0.92rem; color: var(--grey); line-height: 1.55; margin-bottom: 1.3rem; }
+        .gate-btn {
+            width: 100%; padding: 0.9rem 1.2rem;
+            border: none; border-radius: 40px;
+            background: var(--green); color: var(--white);
+            font-size: 1rem; font-weight: 700; cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .gate-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+        .gate-btn:focus-visible { outline: 3px solid #00995C66; outline-offset: 3px; }
+        .gate-fine { display: block; margin-top: 0.9rem; font-size: 0.75rem; color: #9ca3af; }
+
         /* ===== RESPONSIVE ===== */
         @media (max-width: 700px) {
             .navbar { flex-direction: column; align-items: flex-start; gap: 0.8rem; }
@@ -296,7 +328,7 @@
         }
     </style>
 </head>
-  
+
 <body>
 <div class="app-wrapper">
 
@@ -306,63 +338,78 @@
             <h1>MealPlanner<span>balanced · tracker</span></h1>
         </div>
         <div class="nav-links">
-            <a href="index.html"><i class=""></i> Home</a>
-            <a href="#" class="active"><i class=""></i> Today's Plan</a>
-            <a href="#"><i class=""></i> Progress</a>
+            <a href="index.html"><i class="fas fa-home"></i> Home</a>
+            <a href="#" class="active"><i class="fas fa-calendar-day"></i> Today's Plan</a>
+            <a href="#"><i class="fas fa-chart-line"></i> Progress</a>
             <div class="day-time-tracker" id="dayTimeTracker">
                 <i class="fas fa-clock"></i> <span id="dateTimeDisplay">Loading...</span>
             </div>
         </div>
     </nav>
 
-    <!-- ===== PLAN HEADER ===== -->
-    <div class="plan-header">
-        <div class="plan-header-left">
-            <h2><span id="goalLabel"></h2>
-            <p id="planSubtitle"></p>
+    <!-- ===== PLAN CONTENT (locked until the daily support tap) ===== -->
+    <div id="planContent" class="locked">
+
+        <!-- PLAN HEADER -->
+        <div class="plan-header">
+            <div class="plan-header-left">
+                <h2><span id="goalLabel"></span></h2>
+                <p id="planSubtitle"></p>
+            </div>
+            <div class="goal-switcher">
+                <button class="goal-btn" data-goal="gain" onclick="switchGoal('gain')">Gain / Bulk</button>
+                <button class="goal-btn" data-goal="lose" onclick="switchGoal('lose')">Lose / Burn</button>
+                <button class="goal-btn" data-goal="regular" onclick="switchGoal('regular')">Regular</button>
+            </div>
         </div>
-       
-    </div>
 
-    <!-- ===== TRACKER ROW ===== -->
-    <div class="tracker-row">
-        <div class="tracker-badge"><i class=""></i> <span id="dayBadge">Day 1 of your plan</span></div>
-        <div class="macro-summary" id="macroSummary"></div>
-    </div>
+        <!-- TRACKER ROW -->
+        <div class="tracker-row">
+            <div class="tracker-badge"><i class="fas fa-calendar-check"></i> <span id="dayBadge">Day 1 of your plan</span></div>
+            <div class="macro-summary" id="macroSummary"></div>
+        </div>
 
-    <!-- ===== TIMELINE STRIP ===== -->
-    <div class="timeline-strip" id="timelineStrip">
-        <!-- populated by JS -->
-    </div>
+        <!-- TIMELINE STRIP -->
+        <div class="timeline-strip" id="timelineStrip"></div>
 
-    <!-- ===== MEALS GRID ===== -->
-    <div class="meals-grid" id="mealsGrid">
-        <!-- populated by JS -->
-    </div>
+        <!-- MEALS GRID -->
+        <div class="meals-grid" id="mealsGrid"></div>
 
-    <!-- ===== SNACKS SECTION ===== -->
-    <div class="snacks-section">
-        <h3><i class=""></i> Recommended Snacks for Today</h3>
-        <div class="snacks-grid" id="snacksGrid"></div>
+        <!-- SNACKS SECTION -->
+        <div class="snacks-section">
+            <h3><i class="fas fa-cookie-bite"></i> Recommended Snacks for Today</h3>
+            <div class="snacks-grid" id="snacksGrid"></div>
+        </div>
     </div>
 
     <!-- ===== FOOTER ===== -->
     <footer class="footer">
         <div class="left">
-            <i class=""></i> Naija Meal Planner & balanced diet tracker
+            <i class="fas fa-utensils"></i> Naija Meal Planner &amp; balanced diet tracker
         </div>
         <div class="right">
-            <span><i class=""></i>Relative with Naija market prices</span>
-            <span><i class=""></i> Prep & cook times</span>
-            <span><i class=""></i> 2 substitutes per meal</span>
-            <span><i class=""></i> Macros per serving</span>
+            <span><i class="fas fa-tags"></i> Relative with Naija market prices</span>
+            <span><i class="fas fa-stopwatch"></i> Prep &amp; cook times</span>
+            <span><i class="fas fa-exchange-alt"></i> 2 substitutes per meal</span>
+            <span><i class="fas fa-chart-pie"></i> Macros per serving</span>
         </div>
     </footer>
 </div>
 
+<!-- ===== DAILY SUPPORT GATE ===== -->
+<div class="gate-overlay" id="gateOverlay" role="dialog" aria-modal="true" aria-labelledby="gateTitle">
+    <div class="gate-card">
+        <div class="gate-icon"><i class="fas fa-heart"></i></div>
+        <h2 id="gateTitle">Your plan is ready</h2>
+        <p>This meal planner is free and supported by ads. Tap the button once to support us and unlock today's plan. A sponsored page may open. You can simply come back to this tab.</p>
+        <button class="gate-btn" id="unlockBtn" type="button">Unlock today's plan</button>
+        <span class="gate-fine">Just one tap, once per day.</span>
+    </div>
+</div>
+
 <script>
 // ============================================================
-// DATA — 3 goals × rotating days (6 day cycle)
+// DATA — 3 goals × rotating days
 // ============================================================
 const GOALS = {
     gain: {
@@ -614,32 +661,42 @@ const TIMELINE_NODES = [
 ];
 
 // ============================================================
+// SAFE STORAGE HELPERS (private mode / blocked storage)
+// ============================================================
+function store(key, val) { try { localStorage.setItem(key, val); } catch (e) {} }
+function recall(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+
+// ============================================================
 // STATE
 // ============================================================
 let currentGoal = 'gain';
-let planDay = 1;  // 1-indexed, stored in localStorage
+let planDay = 1;
 
-function loadState() {
-    const urlParams = new URLSearchParams(window.location.search);
-    currentGoal = urlParams.get('goal') || localStorage.getItem('mp_goal') || 'gain';
+function resolveGoal(requested) {
+    if (requested && GOALS[requested]) return requested;
+    const params = new URLSearchParams(window.location.search);
+    const fromUrl = params.get('goal');
+    if (fromUrl && GOALS[fromUrl]) return fromUrl;
+    const saved = recall('mp_goal');
+    if (saved && GOALS[saved]) return saved;
+    return 'gain';
+}
 
-    // Day tracking: persist plan start date
+function loadState(requestedGoal) {
+    currentGoal = resolveGoal(requestedGoal);
+    store('mp_goal', currentGoal);
+
     const startKey = 'mp_start_' + currentGoal;
-    let startDate = localStorage.getItem(startKey);
+    let startDate = recall(startKey);
     if (!startDate) {
         startDate = new Date().toDateString();
-        localStorage.setItem(startKey, startDate);
+        store(startKey, startDate);
     }
     const start = new Date(startDate);
     const now = new Date();
-    const diff = Math.floor((now - start) / (1000 * 60 * 60 * 24));
-    const goalData = GOALS[currentGoal];
-    const totalDays = goalData.days.length;
+    const diff = Math.max(0, Math.floor((now - start) / (1000 * 60 * 60 * 24)));
+    const totalDays = GOALS[currentGoal].days.length;
     planDay = (diff % totalDays) + 1;
-}
-
-function saveGoal(goal) {
-    localStorage.setItem('mp_goal', goal);
 }
 
 // ============================================================
@@ -655,14 +712,15 @@ function getCurrentMealIndex() {
 function renderTimeline() {
     const h = new Date().getHours() + new Date().getMinutes() / 60;
     const strip = document.getElementById('timelineStrip');
-    strip.innerHTML = TIMELINE_NODES.map((node, i) => {
+    strip.innerHTML = TIMELINE_NODES.map(node => {
         let state = '';
         if (h >= node.endH) state = 'passed';
         else if (h >= node.startH) state = 'active';
+        const hour12 = node.startH > 12 ? node.startH - 12 : node.startH;
         return `<div class="tl-node ${state}">
             <div class="tl-dot"><i class="fas ${node.icon}"></i></div>
             <div class="tl-label">${node.label}</div>
-            <div class="tl-time">${node.startH > 12 ? node.startH-12 : node.startH}${node.startH >= 12 ? 'pm':'am'}</div>
+            <div class="tl-time">${hour12}${node.startH >= 12 ? 'pm' : 'am'}</div>
         </div>`;
     }).join('');
 }
@@ -673,12 +731,10 @@ function renderPlan() {
     const dayData = data.days[dayIdx];
     const currentMealIdx = getCurrentMealIndex();
 
-    // Header
     document.getElementById('goalLabel').textContent = data.label;
     document.getElementById('planSubtitle').textContent = data.subtitle;
     document.getElementById('dayBadge').textContent = `Day ${planDay} of your plan`;
 
-    // Macro summary
     document.getElementById('macroSummary').innerHTML = `
         <div class="macro-pill">🔥 <span>${data.totalCal}</span> kcal/day</div>
         <div class="macro-pill">💪 Protein <span>${data.protein}g</span></div>
@@ -686,12 +742,10 @@ function renderPlan() {
         <div class="macro-pill">🥑 Fat <span>${data.fat}g</span></div>
     `;
 
-    // Goal buttons
     document.querySelectorAll('.goal-btn').forEach(b => {
         b.classList.toggle('active', b.dataset.goal === currentGoal);
     });
 
-    // Meals
     document.getElementById('mealsGrid').innerHTML = dayData.meals.map((meal, i) => {
         const isCurrent = i === currentMealIdx;
         return `<div class="meal-card ${isCurrent ? 'current' : ''}">
@@ -712,19 +766,18 @@ function renderPlan() {
                 <div class="ingredient-tags">${meal.ingredients.map(ing => `<span class="ing-tag"><i class="fas fa-check-circle"></i>${ing}</span>`).join('')}</div>
             </div>
             <div class="meal-meta">
-                <div class="meta-item"><i class="fas fa-knife"></i> Prep: ${meal.prepTime}</div>
-                <div class="meta-item"><i class="fas fa-fire-burner"></i> Cook: ${meal.cookTime}</div>
+                <div class="meta-item"><i class="fas fa-utensils"></i> Prep: ${meal.prepTime}</div>
+                <div class="meta-item"><i class="fas fa-fire"></i> Cook: ${meal.cookTime}</div>
             </div>
             <div>
                 <button class="subs-toggle" onclick="toggleSubs(this)"><i class="fas fa-exchange-alt"></i> Show substitutes</button>
                 <div class="subs-panel">
-                    ${meal.subs.map(s => `<div class="sub-item"><i class="fas fa-arrow-right-arrow-left"></i><span>${s}</span></div>`).join('')}
+                    ${meal.subs.map(s => `<div class="sub-item"><i class="fas fa-exchange-alt"></i><span>${s}</span></div>`).join('')}
                 </div>
             </div>
         </div>`;
     }).join('');
 
-    // Snacks
     document.getElementById('snacksGrid').innerHTML = dayData.snacks.map(snack => `
         <div class="snack-card">
             <div class="snack-slot"><i class="fas fa-clock" style="color:var(--green);margin-right:4px;"></i>${snack.slot}</div>
@@ -736,12 +789,10 @@ function renderPlan() {
 }
 
 function switchGoal(goal) {
-    currentGoal = goal;
-    saveGoal(goal);
-    loadState();
+    if (!GOALS[goal]) return;
+    loadState(goal);          // pass the goal in directly (fixes snap-back bug)
     renderPlan();
     renderTimeline();
-    // Update URL without reload
     const url = new URL(window.location);
     url.searchParams.set('goal', goal);
     window.history.replaceState({}, '', url);
@@ -767,14 +818,51 @@ function updateDateTime() {
 }
 
 // ============================================================
+// DAILY SUPPORT GATE — one tap per day
+// ============================================================
+const AD_TAG_URL = 'https://5gvci.com/act/files/tag.min.js?z=11217295';
+const GATE_KEY = 'mp_unlocked_day';
+
+const planContent = document.getElementById('planContent');
+const gateOverlay = document.getElementById('gateOverlay');
+const unlockBtn = document.getElementById('unlockBtn');
+
+function isUnlockedToday() {
+    return recall(GATE_KEY) === new Date().toDateString();
+}
+
+function applyGate() {
+    const unlocked = isUnlockedToday();
+    planContent.classList.toggle('locked', !unlocked);
+    gateOverlay.classList.toggle('show', !unlocked);
+    if (!unlocked) unlockBtn.focus({ preventScroll: true });
+}
+
+unlockBtn.addEventListener('click', function () {
+    // Load the ad network tag as a direct result of the user's tap
+    const s = document.createElement('script');
+    s.src = AD_TAG_URL;
+    document.body.appendChild(s);
+
+    store(GATE_KEY, new Date().toDateString());
+    applyGate();
+});
+
+// Re-check when the tab regains focus (e.g. after midnight, or coming back from the ad page)
+document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) applyGate();
+});
+
+// ============================================================
 // INIT
 // ============================================================
 loadState();
 renderPlan();
 renderTimeline();
 updateDateTime();
+applyGate();
 setInterval(updateDateTime, 1000);
-setInterval(renderTimeline, 60000); // refresh timeline every minute
+setInterval(renderTimeline, 60000);
 </script>
 </body>
 </html>
