@@ -152,15 +152,28 @@
     const AD_TAG_URL = 'https://5gvci.com/act/files/tag.min.js?z=11217295';
     const GATE_KEY = 'mp_unlocked_day';
 
-    function store(key, val) { try { localStorage.setItem(key, val); } catch (e) {} }
-    function recall(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+    let unlockedInMemory = false;
+    function store(key, val) {
+        try { localStorage.setItem(key, val); } catch (e) {}
+        try { sessionStorage.setItem(key, val); } catch (e) {}
+        try { document.cookie = key + '=' + encodeURIComponent(val) + '; path=/; max-age=172800; SameSite=Lax'; } catch (e) {}
+    }
+    function recall(key) {
+        try { var a = localStorage.getItem(key); if (a) return a; } catch (e) {}
+        try { var b = sessionStorage.getItem(key); if (b) return b; } catch (e) {}
+        try {
+            var m = document.cookie.match(new RegExp('(?:^|; )' + key + '=([^;]*)'));
+            if (m) return decodeURIComponent(m[1]);
+        } catch (e) {}
+        return null;
+    }
 
     const homeCategories = document.getElementById('homeCategories');
     const gateOverlay = document.getElementById('gateOverlay');
     const unlockBtn = document.getElementById('unlockBtn');
 
     function isUnlockedToday() {
-        return recall(GATE_KEY) === new Date().toDateString();
+        return unlockedInMemory || recall(GATE_KEY) === new Date().toDateString();
     }
 
     function applyGate() {
@@ -171,16 +184,22 @@
     }
 
     unlockBtn.addEventListener('click', function () {
-        // Load the ad network tag as a direct result of the user's tap
-        const s = document.createElement('script');
-        s.src = AD_TAG_URL;
-        document.body.appendChild(s);
-
+        // 1) Unlock right away (in memory), so nothing can re-lock this page view
+        unlockedInMemory = true;
         store(GATE_KEY, new Date().toDateString());
         applyGate();
+
+        // 2) Then load the ad network tag as a direct result of the user's tap
+        try {
+            const s = document.createElement('script');
+            s.src = AD_TAG_URL;
+            document.body.appendChild(s);
+        } catch (e) {}
     });
 
     // Re-check when the tab regains focus (e.g. after midnight, or coming back from the ad page)
+    window.addEventListener('pageshow', function () { applyGate(); });
+
     document.addEventListener('visibilitychange', function () {
         if (!document.hidden) applyGate();
     });
