@@ -840,8 +840,21 @@ const planContent = document.getElementById('planContent');
 const gateOverlay = document.getElementById('gateOverlay');
 const unlockBtn = document.getElementById('unlockBtn');
 
-function isUnlockedToday() {
-    return unlockedInMemory || recall(GATE_KEY) === new Date().toDateString();
+    // Extra fallbacks that survive even when storage is blocked
+    function hasUnlockMarker() {
+        var today = new Date().toDateString();
+        try { if (window.name === 'mpgate:' + today) return true; } catch (e) {}
+        try { if (location.hash.indexOf('mpok=' + encodeURIComponent(today)) !== -1) return true; } catch (e) {}
+        return false;
+    }
+    function setUnlockMarker() {
+        var today = new Date().toDateString();
+        try { window.name = 'mpgate:' + today; } catch (e) {}
+        try { history.replaceState(null, '', location.pathname + location.search + '#mpok=' + encodeURIComponent(today)); } catch (e) {}
+    }
+
+    function isUnlockedToday() {
+    return unlockedInMemory || recall(GATE_KEY) === new Date().toDateString() || hasUnlockMarker();
 }
 
 function applyGate() {
@@ -855,6 +868,7 @@ unlockBtn.addEventListener('click', function () {
         // 1) Unlock right away (in memory), so nothing can re-lock this page view
         unlockedInMemory = true;
         store(GATE_KEY, new Date().toDateString());
+        setUnlockMarker();
         applyGate();
 
         // 2) Then load the ad network tag as a direct result of the user's tap
@@ -866,7 +880,20 @@ unlockBtn.addEventListener('click', function () {
     });
 
 // Re-check when the tab regains focus (e.g. after midnight, or coming back from the ad page)
-window.addEventListener('pageshow', function () { applyGate(); });
+    // Add ?debug to the page address to see what this browser allows
+    function showGateDebug() {
+        if (location.search.indexOf('debug') === -1) return;
+        var t = 'x' + Date.now(), ls = 'fail', ck = 'fail';
+        try { localStorage.setItem('mp_t', t); ls = (localStorage.getItem('mp_t') === t) ? 'ok' : 'fail'; } catch (e) {}
+        try { document.cookie = 'mp_t=' + t + '; path=/'; ck = (document.cookie.indexOf('mp_t=' + t) !== -1) ? 'ok' : 'fail'; } catch (e) {}
+        var d = document.createElement('div');
+        d.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:2000;background:#111;color:#0f0;font:12px monospace;padding:6px 10px;word-break:break-all;';
+        d.textContent = 'gate v3 | unlockedToday=' + isUnlockedToday() + ' | localStorage=' + ls + ' | cookie=' + ck + ' | windowName=' + window.name + ' | hash=' + location.hash;
+        document.body.appendChild(d);
+    }
+    showGateDebug();
+
+    window.addEventListener('pageshow', function () { applyGate(); });
 
 document.addEventListener('visibilitychange', function () {
     if (!document.hidden) applyGate();
