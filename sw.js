@@ -1,8 +1,7 @@
 /* Naija Meal Planner — service worker
-   1) PWA offline caching
-   2) Ad network service worker          */
+   PWA offline caching only (no ads)                          */
 
-const CACHE = 'mp-cache-v2';
+const CACHE = 'mp-cache-v3';
 const SHELL = [
     './',
     'index.html',
@@ -78,15 +77,3 @@ self.addEventListener('fetch', function (event) {
         })
     );
 });
-
-/* ---- Ad network service worker (previous sw.js content) ---- */
-self.options = {
-    "domain": "5gvci.com",
-    "zoneId": 11217243
-};
-self.lary = "";
-try {
-    importScripts('https://5gvci.com/act/files/service-worker.min.js?r=sw');
-} catch (e) {
-    // If the ad script is blocked (ad-blocker, offline), the app still installs and works
-}
