@@ -159,7 +159,7 @@ body{background:var(--white);color:var(--black);font-family:'Segoe UI',Roboto,sy
   <div class="gate-card">
     <div class="gate-icon"><i class="fas fa-heart"></i></div>
     <h2 id="gateTitle">Your plan is ready</h2>
-    <p>This meal planner is free and supported by ads. Tap the button once to support us and unlock today's plan. A sponsored page may open. You can simply come back to this tab.</p>
+    <p>This meal planner is free and supported by ads. Tap the button once to support us. A sponsored page will open first, then today's plan unlocks. You can simply come back to this tab.</p>
     <button class="gate-btn" id="unlockBtn" type="button">Unlock today's plan</button>
     <span class="gate-fine">Just one tap, once per day.</span>
   </div>
@@ -459,7 +459,7 @@ const unlockBtn = document.getElementById('unlockBtn');
 // --- Stats: prompt views (impressions), taps, ad tag load result ---
 function getStats() {
   try { var s = JSON.parse(recall(STATS_KEY) || '{}'); } catch (e) { s = {}; }
-  return Object.assign({ promptViews: 0, taps: 0, tagLoaded: 0, tagFailed: 0, lastView: '', lastTap: '', daily: {} }, s);
+  return Object.assign({ promptViews: 0, taps: 0, adOpened: 0, tagLoaded: 0, tagFailed: 0, lastView: '', lastTap: '', daily: {} }, s);
 }
 function bumpStat(field) {
   var s = getStats(), day = new Date().toISOString().slice(0, 10);
@@ -518,13 +518,43 @@ function applyGate() {
   }
 }
 
-unlockBtn.addEventListener('click', function () {
-  bumpStat('taps');
+// Ad first, unlock second: the tap hands the click to the ad tag, and the plan unlocks
+// once an ad has (probably) opened, or after a short timeout so nobody is ever stuck.
+let unlockPending = false;
+const AD_WAIT_MS = 5000;
+function completeUnlock() {
   unlockedInMemory = true;
   store(GATE_KEY, new Date().toDateString());
   setUnlockMarker();
-  loadAdTag();   // safety net if the tag was not requested yet
   applyGate();
+}
+unlockBtn.addEventListener('click', function () {
+  if (unlockPending) return;
+  unlockPending = true;
+  bumpStat('taps');
+  unlockBtn.disabled = true;
+  unlockBtn.style.opacity = '.7';
+  unlockBtn.style.cursor = 'wait';
+  unlockBtn.textContent = 'Loading sponsor page…';
+  loadAdTag();
+
+  let done = false, timer;
+  function finish(adOpened) {
+    if (done) return;
+    done = true;
+    clearTimeout(timer);
+    window.removeEventListener('blur', onAway);
+    document.removeEventListener('visibilitychange', onHide);
+    if (adOpened) bumpStat('adOpened');
+    completeUnlock();
+  }
+  // The visitor leaving this tab right after the tap means an ad page opened
+  function onAway() { setTimeout(function () { finish(true); }, 300); }
+  function onHide() { if (document.hidden) finish(true); }
+  window.addEventListener('blur', onAway);
+  document.addEventListener('visibilitychange', onHide);
+  // Nothing opened (ad blocker, slow network, no fill): unlock anyway
+  timer = setTimeout(function () { finish(false); }, AD_WAIT_MS);
 });
 
 // --- Debug panel: add ?debug to the address to see live counts ---
@@ -533,7 +563,7 @@ function updateDebug() {
   if (!debugEl) return;
   var s = getStats(), today = new Date().toISOString().slice(0, 10), d = s.daily[today] || { views: 0, taps: 0 };
   debugEl.textContent = 'prompt views: ' + s.promptViews + ' (today ' + d.views + ') | taps: ' + s.taps + ' (today ' + d.taps +
-    ') | ad tag: ' + adTagState + ' [ok ' + s.tagLoaded + ' / fail ' + s.tagFailed + '] | unlockedToday=' + isUnlockedToday();
+    ') | ad opened: ' + s.adOpened + ' | ad tag: ' + adTagState + ' [ok ' + s.tagLoaded + ' / fail ' + s.tagFailed + '] | unlockedToday=' + isUnlockedToday();
 }
 function initDebug() {
   if (location.search.indexOf('debug') === -1) return;
