@@ -100,7 +100,7 @@
         overlay.innerHTML =
             '<div class="mp-pwa-card">' +
               '<img class="mp-pwa-icon" src="icons/icon-192.png" alt="">' +
-              '<h2 id="mpPwaTitle">Install Naija Meal Planner</h2>' +
+              '<h2 id="mpPwaTitle">Install Cal. Meal Planner</h2>' +
               '<p>Add it to your home screen for a one-tap daily routine.</p>' +
               '<ul class="mp-pwa-list">' +
                 '<li><i class="fas fa-check-circle"></i><span>Opens like a real app, straight to today\'s plan</span></li>' +
