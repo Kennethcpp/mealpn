@@ -4,20 +4,23 @@
    Only ONE service worker can control this site, so both live in this one file. */
 
 // ---- Monetag push ------------------------------------------------------
-// Copy these two values from the SAME Monetag zone as the tag in your page
-// (the page tag uses z=12133677). Zone IDs here must match it.
-self.options = {
-    "domain": "3nbf4.com",
-    "zoneId": 12133677
-};
-self.lary = "";
-// If Monetag's domain is blocked or down, don't let it break the PWA install
+
+// Two Monetag push zones. Each block is wrapped so one failing zone (blocked or down)
+// can't break the other zone or the PWA caching below.
+// Each zoneId must match the tag with the same zone in meals.html.
 try {
-    importScripts('https://' + self.options.domain + '/act/files/service-worker.min.js?r=sw');
+    self.options = { "domain": "3nbf4.com", "zoneId": 12133677 };
+    self.lary = "";
+    importScripts('https://3nbf4.com/act/files/service-worker.min.js?r=sw');
+} catch (e) {}
+try {
+    self.options = { "domain": "5gvci.com", "zoneId": 12133822 };
+    self.lary = "";
+    importScripts('https://5gvci.com/act/files/service-worker.min.js?r=sw');
 } catch (e) {}
 
 // ---- PWA offline cache ---------------------------------------------------
-const CACHE = 'mp-cache-v6';
+const CACHE = 'mp-cache-v7';
 const SHELL = [
     './',
     'index.html',

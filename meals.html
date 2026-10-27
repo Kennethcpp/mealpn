@@ -13,8 +13,9 @@
 <meta name="apple-mobile-web-app-title" content="MealPlanner">
 <link rel="preconnect" href="https://3nbf4.com" crossorigin>
 <link rel="dns-prefetch" href="https://3nbf4.com">
+<link rel="preconnect" href="https://5gvci.com" crossorigin>
+<script src="https://5gvci.com/act/files/tag.min.js?z=12133822" data-cfasync="false" async></script>
 <script src="pwa.js"></script>
-
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{--green:#00995C;--green-light:#e6f7f0;--green-mid:#00995C22;--black:#020202;--grey:#6b7280;--grey-light:#f5f5f5;--white:#fff;--radius:24px;--radius-sm:12px;--shadow:0 8px 28px rgba(0,153,92,.09);--shadow-hover:0 18px 40px rgba(0,153,92,.16)}
@@ -477,10 +478,11 @@ function updateDateTime() {
 // ============================================================
 // DAILY SUPPORT GATE + AD TRACKING
 // ============================================================
-// Monetag Multitag (Push Notifications). Paste the tag from your Monetag zone here.
-// Tag pattern follows your Monetag zone 12133677. Confirm it matches the code shown for that zone.
-const AD_TAG_SRC = 'https://3nbf4.com/act/files/tag.min.js?z=12133677';
-const AD_ZONE = '';   // only fill in if your zone's code uses a data-zone attribute
+// Monetag push zones. Each tag must match the zone/domain in the same block of sw.js.
+const AD_TAGS = [
+  { name: 'zone 12133677', src: 'https://3nbf4.com/act/files/tag.min.js?z=12133677' },
+  { name: 'zone 12133822', src: 'https://5gvci.com/act/files/tag.min.js?z=12133822' }
+];
 const GATE_KEY = 'mp_unlocked_day';
 const STATS_KEY = 'mp_ad_stats';
 
@@ -504,21 +506,30 @@ function bumpStat(field) {
   return s;
 }
 
-// --- Monetag tag: loaded once, right after the visitor taps, so the notification prompt follows their tap ---
-let adTagState = 'idle'; // idle | loading | loaded | failed
+// --- Monetag tags: loaded once, right after the visitor taps, so the notification prompt follows their tap ---
+let adTagState = 'idle';          // idle, or a per-zone summary such as "zone 12133677:loaded, zone 12133822:failed"
+let adTagsStarted = false;
+const tagStates = {};
+function setTagState(name, st) {
+  tagStates[name] = st;
+  adTagState = Object.keys(tagStates).map(function (k) { return k + ':' + tagStates[k]; }).join(', ');
+  updateDebug();
+}
 function loadAdTag() {
-  if (adTagState !== 'idle') return;
-  adTagState = 'loading';
-  try {
-    const s = document.createElement('script');
-    s.src = AD_TAG_SRC;
-    if (AD_ZONE) s.setAttribute('data-zone', AD_ZONE);
-    s.async = true;
-    s.setAttribute('data-cfasync', 'false');
-    s.onload = function () { adTagState = 'loaded'; bumpStat('tagLoaded'); };
-    s.onerror = function () { adTagState = 'failed'; bumpStat('tagFailed'); };
-    (document.head || document.body).appendChild(s);
-  } catch (e) { adTagState = 'failed'; bumpStat('tagFailed'); }
+  if (adTagsStarted) return;
+  adTagsStarted = true;
+  AD_TAGS.forEach(function (t) {
+    setTagState(t.name, 'loading');
+    try {
+      const s = document.createElement('script');
+      s.src = t.src;
+      s.async = true;
+      s.setAttribute('data-cfasync', 'false');
+      s.onload = function () { setTagState(t.name, 'loaded'); bumpStat('tagLoaded'); };
+      s.onerror = function () { setTagState(t.name, 'failed'); bumpStat('tagFailed'); };
+      (document.head || document.body).appendChild(s);
+    } catch (e) { setTagState(t.name, 'failed'); bumpStat('tagFailed'); }
+  });
 }
 
 // --- Unlock markers that survive blocked storage ---
