@@ -11,9 +11,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="MealPlanner">
-<link rel="preconnect" href="https://3nbf4.com" crossorigin>
-<link rel="dns-prefetch" href="https://3nbf4.com">
 <link rel="preconnect" href="https://5gvci.com" crossorigin>
+<link rel="preconnect" href="https://nap5k.com" crossorigin>
 <script src="pwa.js"></script>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
@@ -477,10 +476,11 @@ function updateDateTime() {
 // ============================================================
 // DAILY SUPPORT GATE + AD TRACKING
 // ============================================================
-// Monetag push zones. Each tag must match the zone/domain in the same block of sw.js.
+// Same Monetag tags as index.html, loaded on every page view as Monetag instructs.
+// The push zone (12133822 on 5gvci.com) must match the zone in sw.js.
 const AD_TAGS = [
-  { name: 'zone 12133677', src: 'https://3nbf4.com/act/files/tag.min.js?z=12133677' },
-  { name: 'zone 12133822', src: 'https://5gvci.com/act/files/tag.min.js?z=12133822' }
+  { name: 'push 12133822', src: 'https://5gvci.com/act/files/tag.min.js?z=12133822' },
+  { name: 'tag 12133714', src: 'https://nap5k.com/tag.min.js', zone: '12133714' }
 ];
 const GATE_KEY = 'mp_unlocked_day';
 const STATS_KEY = 'mp_ad_stats';
@@ -505,7 +505,7 @@ function bumpStat(field) {
   return s;
 }
 
-// --- Monetag tags: loaded once, right after the visitor taps, so the notification prompt follows their tap ---
+// --- Monetag tags: loaded once per page view, as soon as the PWA install popup is out of the way ---
 let adTagState = 'idle';          // idle, or a per-zone summary such as "zone 12133677:loaded, zone 12133822:failed"
 let adTagsStarted = false;
 const tagStates = {};
@@ -522,6 +522,7 @@ function loadAdTag() {
     try {
       const s = document.createElement('script');
       s.src = t.src;
+      if (t.zone) s.dataset.zone = t.zone;
       s.async = true;
       s.setAttribute('data-cfasync', 'false');
       s.onload = function () { setTagState(t.name, 'loaded'); bumpStat('tagLoaded'); };
@@ -552,6 +553,7 @@ let viewCounted = false;
 function applyGate() {
   const unlocked = isUnlockedToday();
   planContent.classList.toggle('locked', !unlocked);
+  if (!window.mpPwaBusy) loadAdTag();          // tags load for every visit, unlocked or not
   const showGate = !unlocked && !window.mpPwaBusy && !interstitialOpen;
   gateOverlay.classList.toggle('show', showGate);
   if (showGate) {
@@ -675,6 +677,8 @@ document.addEventListener('visibilitychange', function () { if (!document.hidden
 // INIT
 // ============================================================
 loadState();
+watchPush();
+recordPush();
 renderPlan();
 renderTimeline();
 updateDateTime();

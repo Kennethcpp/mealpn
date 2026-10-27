@@ -5,14 +5,9 @@
 
 // ---- Monetag push ------------------------------------------------------
 
-// Two Monetag push zones. Each block is wrapped so one failing zone (blocked or down)
-// can't break the other zone or the PWA caching below.
-// Each zoneId must match the tag with the same zone in meals.html.
-try {
-    self.options = { "domain": "3nbf4.com", "zoneId": 12133677 };
-    self.lary = "";
-    importScripts('https://3nbf4.com/act/files/service-worker.min.js?r=sw');
-} catch (e) {}
+// Monetag push zone. It must match the push tag in index.html and meals.html
+// (https://5gvci.com/act/files/tag.min.js?z=12133822).
+// Wrapped so a blocked or unreachable Monetag domain can't break the PWA caching below.
 try {
     self.options = { "domain": "5gvci.com", "zoneId": 12133822 };
     self.lary = "";
@@ -20,7 +15,7 @@ try {
 } catch (e) {}
 
 // ---- PWA offline cache ---------------------------------------------------
-const CACHE = 'mp-cache-v7';
+const CACHE = 'mp-cache-v8';
 const SHELL = [
     './',
     'index.html',
