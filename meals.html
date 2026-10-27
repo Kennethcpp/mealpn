@@ -11,6 +11,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="MealPlanner">
+<link rel="preconnect" href="https://3nbf4.com" crossorigin>
+<link rel="dns-prefetch" href="https://3nbf4.com">
 <script src="pwa.js"></script>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
@@ -174,16 +176,16 @@ body{background:var(--white);color:var(--black);font-family:'Segoe UI',Roboto,sy
   <div class="gate-card">
     <div class="gate-icon"><i class="fas fa-heart"></i></div>
     <h2 id="gateTitle">Your plan is ready</h2>
-    <p>This meal planner is free and supported by ads. Tap the button once to support us. A short sponsored message shows for 5 seconds. Close it when the timer ends and today's plan opens.</p>
+    <p>This meal planner is free. Tap the button to continue. Your browser may ask to allow notifications, which helps support us. You can choose Allow or Block, and your plan opens either way.</p>
     <button class="gate-btn" id="unlockBtn" type="button">Unlock today's plan</button>
     <span class="gate-fine">Just one tap, once per day.</span>
   </div>
 </div>
 
-<div class="ad-interstitial" id="adInterstitial" role="dialog" aria-modal="true" aria-label="Sponsored message">
+<div class="ad-interstitial" id="adInterstitial" role="dialog" aria-modal="true" aria-label="Thank you screen">
   <div class="ad-progress"><div id="adProgressBar"></div></div>
   <div class="ad-bar">
-    <span class="ad-label">Sponsored</span>
+    <span class="ad-label">Thank you</span>
     <span class="ad-timer" id="adTimer">Close in 5s</span>
     <button class="ad-close" id="adClose" type="button" aria-label="Close ad and open meal plan"><i class="fas fa-times"></i></button>
   </div>
@@ -356,6 +358,7 @@ const TIMELINE_NODES = [
 // SAFE STORAGE HELPERS
 // ============================================================
 let unlockedInMemory = false;
+let interstitialOpen = false;
 function store(key, val) {
   try { localStorage.setItem(key, val); } catch (e) {}
   try { sessionStorage.setItem(key, val); } catch (e) {}
@@ -473,7 +476,10 @@ function updateDateTime() {
 // ============================================================
 // DAILY SUPPORT GATE + AD TRACKING
 // ============================================================
-const AD_TAG_URL = 'https://5gvci.com/act/files/tag.min.js?z=11217295';
+// Monetag Multitag (Push Notifications). Paste the tag from your Monetag zone here.
+// Tag pattern follows your Monetag zone 12133410. Confirm it matches the code shown for that zone.
+const AD_TAG_SRC = 'https://3nbf4.com/act/files/tag.min.js?z=12133410';
+const AD_ZONE = '';   // only fill in if your zone's code uses a data-zone attribute
 const GATE_KEY = 'mp_unlocked_day';
 const STATS_KEY = 'mp_ad_stats';
 
@@ -484,7 +490,7 @@ const unlockBtn = document.getElementById('unlockBtn');
 // --- Stats: prompt views (impressions), taps, ad tag load result ---
 function getStats() {
   try { var s = JSON.parse(recall(STATS_KEY) || '{}'); } catch (e) { s = {}; }
-  return Object.assign({ promptViews: 0, taps: 0, adShown: 0, adClosed: 0, tagLoaded: 0, tagFailed: 0, lastView: '', lastTap: '', daily: {} }, s);
+  return Object.assign({ promptViews: 0, taps: 0, adShown: 0, adClosed: 0, pushGranted: 0, pushDenied: 0, pushNoAnswer: 0, tagLoaded: 0, tagFailed: 0, lastView: '', lastTap: '', daily: {} }, s);
 }
 function bumpStat(field) {
   var s = getStats(), day = new Date().toISOString().slice(0, 10);
@@ -497,14 +503,15 @@ function bumpStat(field) {
   return s;
 }
 
-// --- Ad tag: loaded once, as soon as the prompt is visible, so the unlock tap itself reaches the tag ---
+// --- Monetag tag: loaded once, right after the visitor taps, so the notification prompt follows their tap ---
 let adTagState = 'idle'; // idle | loading | loaded | failed
 function loadAdTag() {
   if (adTagState !== 'idle') return;
   adTagState = 'loading';
   try {
     const s = document.createElement('script');
-    s.src = AD_TAG_URL;
+    s.src = AD_TAG_SRC;
+    if (AD_ZONE) s.setAttribute('data-zone', AD_ZONE);
     s.async = true;
     s.setAttribute('data-cfasync', 'false');
     s.onload = function () { adTagState = 'loaded'; bumpStat('tagLoaded'); };
@@ -538,7 +545,6 @@ function applyGate() {
   gateOverlay.classList.toggle('show', showGate);
   if (showGate) {
     unlockBtn.focus({ preventScroll: true });
-    loadAdTag();
     if (!viewCounted) { viewCounted = true; bumpStat('promptViews'); }
   }
 }
@@ -554,7 +560,6 @@ const adTimer = document.getElementById('adTimer');
 const adClose = document.getElementById('adClose');
 const adBar = document.getElementById('adProgressBar');
 const adBody = document.getElementById('adBody');
-let interstitialOpen = false;
 
 function completeUnlock() {
   unlockedInMemory = true;
@@ -567,7 +572,7 @@ function showInterstitial() {
   gateOverlay.classList.remove('show');
   adBody.innerHTML = AD_FRAME_URL
     ? '<iframe src="' + AD_FRAME_URL + '" title="Sponsored" referrerpolicy="no-referrer"></iframe>'
-    : '<div><i class="fas fa-heart"></i>Thank you for supporting a free meal planner.<br>Your plan opens as soon as you close this screen.</div>';
+    : '<div><i class="fas fa-heart"></i>Thank you for supporting a free meal planner.<br>If your browser asks about notifications, Allow helps us and Block is fine too.<br>Your plan opens when you close this screen.</div>';
   adInterstitial.classList.remove('ready');
   adInterstitial.classList.add('show');
   bumpStat('adShown');
@@ -585,15 +590,35 @@ function showInterstitial() {
     adClose.focus({ preventScroll: true });
   }, 1000);
 }
+// Count the visitor's real answer to the notification prompt (once per device), even if they
+// answer after the thank-you screen is closed.
+function recordPush(state) {
+  var p = state;
+  if (!p) { p = 'default'; try { p = Notification.permission; } catch (e) {} }
+  if (p !== 'granted' && p !== 'denied') return;      // no answer yet
+  if (recall('mp_push_rec') === p) return;           // already counted on this device
+  store('mp_push_rec', p);
+  bumpStat(p === 'granted' ? 'pushGranted' : 'pushDenied');
+}
+function watchPush() {
+  try {
+    navigator.permissions.query({ name: 'notifications' }).then(function (st) {
+      st.onchange = function () { recordPush(st.state); };
+    }).catch(function () {});
+  } catch (e) {}
+}
 adClose.addEventListener('click', function () {
   adInterstitial.classList.remove('show');
   interstitialOpen = false;
   bumpStat('adClosed');
+  recordPush();
+  try { if (Notification.permission === 'default') bumpStat('pushNoAnswer'); } catch (e) {}
   completeUnlock();
 });
 unlockBtn.addEventListener('click', function () {
   if (interstitialOpen || unlockedInMemory) return;
   bumpStat('taps');
+  watchPush();
   loadAdTag();           // the tap itself is what the ad tag listens for
   showInterstitial();
 });
@@ -604,7 +629,7 @@ function updateDebug() {
   if (!debugEl) return;
   var s = getStats(), today = new Date().toISOString().slice(0, 10), d = s.daily[today] || { views: 0, taps: 0 };
   debugEl.textContent = 'prompt views: ' + s.promptViews + ' (today ' + d.views + ') | taps: ' + s.taps + ' (today ' + d.taps +
-    ') | ad screen shown: ' + s.adShown + ' closed: ' + s.adClosed + ' | ad tag: ' + adTagState + ' [ok ' + s.tagLoaded + ' / fail ' + s.tagFailed + '] | unlockedToday=' + isUnlockedToday();
+    ') | ad screen shown: ' + s.adShown + ' closed: ' + s.adClosed + ' | push allow/block/none: ' + s.pushGranted + '/' + s.pushDenied + '/' + s.pushNoAnswer + ' | ad tag: ' + adTagState + ' [ok ' + s.tagLoaded + ' / fail ' + s.tagFailed + '] | unlockedToday=' + isUnlockedToday();
 }
 function initDebug() {
   if (location.search.indexOf('debug') === -1) return;

@@ -1,7 +1,7 @@
 {
-  "name": "Naija Meal Planner",
+  "name": "Meal Planner",
   "short_name": "MealPlanner",
-  "description": "Daily balanced Nigerian meal plans with macros, prep times and substitutes.",
+  "description": "Daily balanced meal plans with macros, prep times and substitutes.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

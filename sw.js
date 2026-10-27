@@ -17,7 +17,7 @@ try {
 } catch (e) {}
 
 // ---- PWA offline cache ---------------------------------------------------
-const CACHE = 'mp-cache-v4';
+const CACHE = 'mp-cache-v5';
 const SHELL = [
     './',
     'index.html',
