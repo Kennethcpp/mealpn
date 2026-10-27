@@ -5,10 +5,10 @@
 
 // ---- Monetag push ------------------------------------------------------
 // Copy these two values from the SAME Monetag zone as the tag in your page
-// (the page tag uses z=12133410). Zone IDs here must match it.
+// (the page tag uses z=12133677). Zone IDs here must match it.
 self.options = {
     "domain": "3nbf4.com",
-    "zoneId": 12133410
+    "zoneId": 12133677
 };
 self.lary = "";
 // If Monetag's domain is blocked or down, don't let it break the PWA install
@@ -17,7 +17,7 @@ try {
 } catch (e) {}
 
 // ---- PWA offline cache ---------------------------------------------------
-const CACHE = 'mp-cache-v5';
+const CACHE = 'mp-cache-v6';
 const SHELL = [
     './',
     'index.html',
