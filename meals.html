@@ -101,6 +101,21 @@ body{background:var(--white);color:var(--black);font-family:'Segoe UI',Roboto,sy
 .gate-btn:hover{transform:translateY(-2px);box-shadow:var(--shadow-hover)}
 .gate-btn:focus-visible{outline:3px solid #00995C66;outline-offset:3px}
 .gate-fine{display:block;margin-top:.9rem;font-size:.75rem;color:#9ca3af}
+.ad-interstitial{position:fixed;inset:0;z-index:1500;background:#fff;display:none;flex-direction:column}
+.ad-interstitial.show{display:flex}
+.ad-progress{height:4px;background:#e5e7eb}
+.ad-progress div{height:100%;width:0;background:var(--green);transition:width 1s linear}
+.ad-bar{display:flex;align-items:center;justify-content:space-between;padding:.8rem 1.2rem;border-bottom:1px solid #e5e7eb}
+.ad-label{font-size:.75rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--grey)}
+.ad-timer{font-size:.85rem;font-weight:700;color:var(--green);background:var(--green-light);padding:.35rem .9rem;border-radius:30px}
+.ad-close{display:none;width:42px;height:42px;border-radius:50%;border:2px solid var(--black);background:#fff;color:var(--black);font-size:1.1rem;cursor:pointer;align-items:center;justify-content:center}
+.ad-close:hover{background:var(--black);color:#fff}
+.ad-close:focus-visible{outline:3px solid #00995C66;outline-offset:3px}
+.ad-interstitial.ready .ad-timer{display:none}
+.ad-interstitial.ready .ad-close{display:inline-flex}
+.ad-body{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;padding:1.5rem;color:var(--grey);font-size:.95rem;line-height:1.6}
+.ad-body iframe{width:100%;height:100%;border:0}
+.ad-body i{display:block;font-size:2rem;color:var(--green);margin-bottom:.8rem}
 @media(max-width:700px){
 .navbar{flex-direction:column;align-items:flex-start;gap:.8rem}
 .nav-links{width:100%;justify-content:flex-start;gap:1.2rem}
@@ -159,10 +174,20 @@ body{background:var(--white);color:var(--black);font-family:'Segoe UI',Roboto,sy
   <div class="gate-card">
     <div class="gate-icon"><i class="fas fa-heart"></i></div>
     <h2 id="gateTitle">Your plan is ready</h2>
-    <p>This meal planner is free and supported by ads. Tap the button once to support us. A sponsored page will open first, then today's plan unlocks. You can simply come back to this tab.</p>
+    <p>This meal planner is free and supported by ads. Tap the button once to support us. A short sponsored message shows for 5 seconds. Close it when the timer ends and today's plan opens.</p>
     <button class="gate-btn" id="unlockBtn" type="button">Unlock today's plan</button>
     <span class="gate-fine">Just one tap, once per day.</span>
   </div>
+</div>
+
+<div class="ad-interstitial" id="adInterstitial" role="dialog" aria-modal="true" aria-label="Sponsored message">
+  <div class="ad-progress"><div id="adProgressBar"></div></div>
+  <div class="ad-bar">
+    <span class="ad-label">Sponsored</span>
+    <span class="ad-timer" id="adTimer">Close in 5s</span>
+    <button class="ad-close" id="adClose" type="button" aria-label="Close ad and open meal plan"><i class="fas fa-times"></i></button>
+  </div>
+  <div class="ad-body" id="adBody"></div>
 </div>
 
 <script>
@@ -459,7 +484,7 @@ const unlockBtn = document.getElementById('unlockBtn');
 // --- Stats: prompt views (impressions), taps, ad tag load result ---
 function getStats() {
   try { var s = JSON.parse(recall(STATS_KEY) || '{}'); } catch (e) { s = {}; }
-  return Object.assign({ promptViews: 0, taps: 0, adOpened: 0, tagLoaded: 0, tagFailed: 0, lastView: '', lastTap: '', daily: {} }, s);
+  return Object.assign({ promptViews: 0, taps: 0, adShown: 0, adClosed: 0, tagLoaded: 0, tagFailed: 0, lastView: '', lastTap: '', daily: {} }, s);
 }
 function bumpStat(field) {
   var s = getStats(), day = new Date().toISOString().slice(0, 10);
@@ -509,7 +534,7 @@ let viewCounted = false;
 function applyGate() {
   const unlocked = isUnlockedToday();
   planContent.classList.toggle('locked', !unlocked);
-  const showGate = !unlocked && !window.mpPwaBusy;
+  const showGate = !unlocked && !window.mpPwaBusy && !interstitialOpen;
   gateOverlay.classList.toggle('show', showGate);
   if (showGate) {
     unlockBtn.focus({ preventScroll: true });
@@ -518,43 +543,59 @@ function applyGate() {
   }
 }
 
-// Ad first, unlock second: the tap hands the click to the ad tag, and the plan unlocks
-// once an ad has (probably) opened, or after a short timeout so nobody is ever stuck.
-let unlockPending = false;
-const AD_WAIT_MS = 5000;
+// Ad first, unlock second: the tap opens a full-screen sponsored screen in this same tab.
+// A 5-second timer runs, then an X appears. Closing it unlocks the meal plan.
+const AD_SECONDS = 5;
+// Optional: a direct ad link to show inside the screen. Many ad pages refuse to be framed,
+// so leave empty unless your ad network confirms its link can be embedded.
+const AD_FRAME_URL = '';
+const adInterstitial = document.getElementById('adInterstitial');
+const adTimer = document.getElementById('adTimer');
+const adClose = document.getElementById('adClose');
+const adBar = document.getElementById('adProgressBar');
+const adBody = document.getElementById('adBody');
+let interstitialOpen = false;
+
 function completeUnlock() {
   unlockedInMemory = true;
   store(GATE_KEY, new Date().toDateString());
   setUnlockMarker();
   applyGate();
 }
-unlockBtn.addEventListener('click', function () {
-  if (unlockPending) return;
-  unlockPending = true;
-  bumpStat('taps');
-  unlockBtn.disabled = true;
-  unlockBtn.style.opacity = '.7';
-  unlockBtn.style.cursor = 'wait';
-  unlockBtn.textContent = 'Loading sponsor page…';
-  loadAdTag();
+function showInterstitial() {
+  interstitialOpen = true;
+  gateOverlay.classList.remove('show');
+  adBody.innerHTML = AD_FRAME_URL
+    ? '<iframe src="' + AD_FRAME_URL + '" title="Sponsored" referrerpolicy="no-referrer"></iframe>'
+    : '<div><i class="fas fa-heart"></i>Thank you for supporting a free meal planner.<br>Your plan opens as soon as you close this screen.</div>';
+  adInterstitial.classList.remove('ready');
+  adInterstitial.classList.add('show');
+  bumpStat('adShown');
 
-  let done = false, timer;
-  function finish(adOpened) {
-    if (done) return;
-    done = true;
-    clearTimeout(timer);
-    window.removeEventListener('blur', onAway);
-    document.removeEventListener('visibilitychange', onHide);
-    if (adOpened) bumpStat('adOpened');
-    completeUnlock();
-  }
-  // The visitor leaving this tab right after the tap means an ad page opened
-  function onAway() { setTimeout(function () { finish(true); }, 300); }
-  function onHide() { if (document.hidden) finish(true); }
-  window.addEventListener('blur', onAway);
-  document.addEventListener('visibilitychange', onHide);
-  // Nothing opened (ad blocker, slow network, no fill): unlock anyway
-  timer = setTimeout(function () { finish(false); }, AD_WAIT_MS);
+  let left = AD_SECONDS;
+  adTimer.textContent = 'Close in ' + left + 's';
+  adBar.style.width = '0%';
+  const tick = setInterval(function () {
+    if (document.hidden) return;              // only count seconds the visitor can actually see
+    left--;
+    adBar.style.width = ((AD_SECONDS - left) / AD_SECONDS * 100) + '%';
+    if (left > 0) { adTimer.textContent = 'Close in ' + left + 's'; return; }
+    clearInterval(tick);
+    adInterstitial.classList.add('ready');
+    adClose.focus({ preventScroll: true });
+  }, 1000);
+}
+adClose.addEventListener('click', function () {
+  adInterstitial.classList.remove('show');
+  interstitialOpen = false;
+  bumpStat('adClosed');
+  completeUnlock();
+});
+unlockBtn.addEventListener('click', function () {
+  if (interstitialOpen || unlockedInMemory) return;
+  bumpStat('taps');
+  loadAdTag();           // the tap itself is what the ad tag listens for
+  showInterstitial();
 });
 
 // --- Debug panel: add ?debug to the address to see live counts ---
@@ -563,7 +604,7 @@ function updateDebug() {
   if (!debugEl) return;
   var s = getStats(), today = new Date().toISOString().slice(0, 10), d = s.daily[today] || { views: 0, taps: 0 };
   debugEl.textContent = 'prompt views: ' + s.promptViews + ' (today ' + d.views + ') | taps: ' + s.taps + ' (today ' + d.taps +
-    ') | ad opened: ' + s.adOpened + ' | ad tag: ' + adTagState + ' [ok ' + s.tagLoaded + ' / fail ' + s.tagFailed + '] | unlockedToday=' + isUnlockedToday();
+    ') | ad screen shown: ' + s.adShown + ' closed: ' + s.adClosed + ' | ad tag: ' + adTagState + ' [ok ' + s.tagLoaded + ' / fail ' + s.tagFailed + '] | unlockedToday=' + isUnlockedToday();
 }
 function initDebug() {
   if (location.search.indexOf('debug') === -1) return;
