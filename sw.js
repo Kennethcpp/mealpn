@@ -1,7 +1,23 @@
-/* Naija Meal Planner — service worker
-   PWA offline caching only (no ads)                          */
+/* California Meal Planner — service worker
+   1) Monetag push notifications (importScripts)
+   2) PWA offline caching
+   Only ONE service worker can control this site, so both live in this one file. */
 
-const CACHE = 'mp-cache-v3';
+// ---- Monetag push ------------------------------------------------------
+// Copy these two values from the SAME Monetag zone as the tag in your page
+// (the page tag uses z=12133410). Zone IDs here must match it.
+self.options = {
+    "domain": "3nbf4.com",
+    "zoneId": 12133410
+};
+self.lary = "";
+// If Monetag's domain is blocked or down, don't let it break the PWA install
+try {
+    importScripts('https://' + self.options.domain + '/act/files/service-worker.min.js?r=sw');
+} catch (e) {}
+
+// ---- PWA offline cache ---------------------------------------------------
+const CACHE = 'mp-cache-v4';
 const SHELL = [
     './',
     'index.html',
